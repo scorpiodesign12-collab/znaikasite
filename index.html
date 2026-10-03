@@ -801,8 +801,8 @@
         goToStep(currentStep + 1);
       } else {
         soundFinish();
-        alert("🎉 Курс настроен! Переходим к первому уроку.");
-        goToStep(0);
+        // Переход на главную страницу с уроками (бывший index.html)
+        setTimeout(() => { window.location.href = "lessons.html"; }, 250);
       }
     }
 
