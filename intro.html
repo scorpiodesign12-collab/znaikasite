@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>ЗнАйка — Старт обучения</title>
+  <style>
+    :root {
+      --theme-bg: #156bf7;
+      --theme-gradient: linear-gradient(180deg, #176dfa 0%, #0d5ad4 100%);
+      --accent-mint: #8ef5b6;
+      --accent-mint-text: #064022;
+      --card-white: #ffffff;
+      --text-dark: #0f172a;
+      --text-muted: #64748b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      height: 100dvh;
+      overflow: hidden;
+      background: var(--theme-gradient);
+      color: #fff;
+    }
+
+    .app-screen {
+      width: 100%;
+      height: 100dvh;
+      max-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 14px 20px max(14px, env(safe-area-inset-bottom)) 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    @media (min-width: 768px) {
+      .app-screen {
+        padding: 28px 40px max(24px, env(safe-area-inset-bottom)) 40px;
+      }
+    }
+
+    /* Верхний сторис-бар */
+    .stories-timeline {
+      width: 100%;
+      max-width: 600px;
+      margin: 0 auto 10px auto;
+      display: flex;
+      gap: 6px;
+      position: relative;
+      z-index: 20;
+    }
+
+    .story-track {
+      flex: 1;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.25);
+      border-radius: 4px;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    .story-fill {
+      height: 100%;
+      width: 0%;
+      background: #ffffff;
+      border-radius: 4px;
+      box-shadow: 0 0 8px rgba(255, 255, 255, 0.9);
+      transition: width 0.08s linear;
+    }
+
+    /* Витрина слайдов */
+    .scenes-viewport {
+      flex: 1;
+      width: 100%;
+      max-width: 580px;
+      margin: 0 auto;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 0;
+    }
+
+    .scene-slide {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+      pointer-events: none;
+      transform: scale(0.96) translateY(14px);
+      transition: all 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .scene-slide.active {
+      opacity: 1;
+      pointer-events: auto;
+      transform: scale(1) translateY(0);
+    }
+
+    /* Заголовки */
+    .slide-header {
+      text-align: center;
+      margin-bottom: 12px;
+    }
+    .slide-badge-sub {
+      font-size: clamp(10.5px, 2.8vw, 12.5px);
+      font-weight: 800;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      opacity: 0.9;
+      margin-bottom: 2px;
+    }
+    .slide-h1 {
+      font-size: clamp(22px, 5.8vw, 32px);
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      line-height: 1.15;
+    }
+
+    /* СЛАЙД 1: Тропа без наезда линий */
+    .compact-trail-container {
+      width: 100%;
+      max-width: 340px;
+      height: 180px;
+      position: relative;
+      margin: 4px 0 8px 0;
+    }
+
+    .trail-svg-line {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .trail-node-item {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transform: translate(-50%, -50%);
+      z-index: 2;
+    }
+
+    /* Четкие координаты зигзага */
+    .trail-node-item.node-1 { top: 26%; left: 24%; }
+    .trail-node-item.node-2 { top: 64%; left: 51%; }
+    .trail-node-item.node-3 { top: 30%; left: 79%; }
+
+    .node-circle {
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 5px 0 rgba(0, 0, 0, 0.16);
+      transition: transform 0.2s;
+    }
+
+    .node-circle.mint {
+      background: var(--accent-mint);
+      color: var(--accent-mint-text);
+      box-shadow: 0 0 0 3.5px var(--theme-bg), 0 0 0 6.5px #fff, 0 6px 0 6.5px rgba(0,0,0,0.18);
+    }
+    .node-circle.mint .score { font-size: 22px; font-weight: 900; line-height: 1; }
+    .node-circle.mint .sub { font-size: 8px; font-weight: 800; text-transform: uppercase; margin-top: 2px; }
+
+    .node-circle.play {
+      background: #ffffff;
+      color: var(--text-dark);
+      box-shadow: 0 6px 0 rgba(0, 0, 0, 0.2), 0 0 18px rgba(255, 255, 255, 0.85);
+      animation: pulsePlay 1.8s infinite ease-in-out;
+    }
+    @keyframes pulsePlay {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.08); }
+    }
+
+    .node-circle.lock {
+      background: rgba(255, 255, 255, 0.25);
+      border: 1.5px solid rgba(255, 255, 255, 0.35);
+      backdrop-filter: blur(6px);
+      color: rgba(255, 255, 255, 0.85);
+      width: 48px;
+      height: 48px;
+    }
+
+    .node-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.95);
+      margin-top: 4px;
+      white-space: nowrap;
+    }
+
+    /* СЛАЙД 2: Карточки языков с поворотом и галочкой */
+    .languages-interactive-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      width: 100%;
+      margin: 6px 0 12px 0;
+    }
+
+    .interactive-lang-card {
+      background: #ffffff;
+      color: var(--text-dark);
+      border-radius: 22px;
+      padding: 16px 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      box-shadow: 0 10px 24px rgba(0, 20, 60, 0.16);
+      border: 2.5px solid transparent;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+      outline: none;
+    }
+
+    .interactive-lang-card.selected {
+      transform: rotate(-3.5deg) scale(1.04);
+      border-color: #156bf7;
+      box-shadow: 0 14px 30px rgba(0, 0, 0, 0.25), 0 0 0 3px rgba(255, 255, 255, 0.6);
+      background: #f8fbff;
+    }
+
+    .interactive-lang-card.selected .card-title {
+      font-style: italic !important;
+      color: #156bf7;
+    }
+
+    .check-corner-badge {
+      position: absolute;
+      top: -6px;
+      left: -6px;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #10b981;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 900;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.25);
+      opacity: 0;
+      transform: scale(0.4) rotate(-30deg);
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .interactive-lang-card.selected .check-corner-badge {
+      opacity: 1;
+      transform: scale(1) rotate(0deg);
+    }
+
+    .interactive-lang-card img {
+      width: 46px;
+      height: 32px;
+      object-fit: cover;
+      border-radius: 6px;
+      margin-bottom: 8px;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.18);
+    }
+    .card-title {
+      font-size: 15px;
+      font-weight: 800;
+      margin-bottom: 3px;
+      transition: all 0.2s;
+    }
+    .card-badge {
+      font-size: 10px;
+      font-weight: 800;
+      padding: 3px 7px;
+      border-radius: 7px;
+      margin-bottom: 5px;
+    }
+    .badge-en { background: #eff6ff; color: #156bf7; }
+    .badge-tt { background: #ecfdf5; color: #059669; }
+    .card-desc {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      font-weight: 600;
+      line-height: 1.25;
+    }
+
+    /* СЛАЙД 3: Транскрипция с реальными флагами */
+    .phonetic-card {
+      background: #ffffff;
+      color: var(--text-dark);
+      border-radius: 22px;
+      padding: 16px 18px;
+      width: 100%;
+      box-shadow: 0 12px 30px rgba(0, 20, 60, 0.16);
+    }
+    .phonetic-row {
+      background: #f8fafc;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 11px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .phonetic-row:last-child { margin-bottom: 0; }
+    .word-main {
+      font-size: 16px;
+      font-weight: 800;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .transcription-pill {
+      background: #fef3c7;
+      color: #92400e;
+      font-size: 11.5px;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 6px;
+    }
+    .trans-ru {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      font-weight: 600;
+      margin-top: 2px;
+    }
+    .flag-icon-img {
+      width: 34px;
+      height: 24px;
+      object-fit: cover;
+      border-radius: 4px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+      flex-shrink: 0;
+    }
+
+    /* СЛАЙД 4: Карточки статистики со средним баллом 5,0 */
+    .stats-compact-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      width: 100%;
+    }
+    .stat-card-white {
+      background: #ffffff;
+      color: var(--text-dark);
+      border-radius: 22px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 105px;
+      box-shadow: 0 12px 30px rgba(0, 20, 60, 0.16);
+    }
+    .stat-head-txt {
+      font-size: 13px;
+      font-weight: 800;
+      color: #1e293b;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .info-i {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #156bf7;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 800;
+      font-style: italic;
+    }
+    .stat-big-num {
+      font-size: 30px;
+      font-weight: 900;
+      letter-spacing: -1px;
+      line-height: 1;
+      margin: 4px 0 2px 0;
+      color: #0f172a;
+    }
+    .stat-foot-txt {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .slide-subtext {
+      text-align: center;
+      font-size: clamp(12.5px, 3.4vw, 14.5px);
+      line-height: 1.4;
+      color: rgba(255, 255, 255, 0.92);
+      max-width: 440px;
+      margin-top: 10px;
+    }
+
+    /* КНОПКА "ДАЛЕЕ" */
+    .bottom-flow-box {
+      width: 100%;
+      max-width: 520px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 20;
+    }
+
+    .animated-next-btn {
+      position: relative;
+      width: 100%;
+      height: clamp(52px, 7.5vh, 60px);
+      background: #ffffff;
+      color: #156bf7;
+      border: none;
+      border-radius: 19px;
+      font-size: clamp(16px, 4.2vw, 18px);
+      font-weight: 900;
+      letter-spacing: 0.3px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: 0 5px 0 #0b4ec2, 0 12px 24px rgba(0, 0, 0, 0.25);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      overflow: hidden;
+      animation: buttonFloat 2.6s infinite ease-in-out;
+    }
+
+    .animated-next-btn::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -130%;
+      width: 70%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(21, 107, 247, 0.12), rgba(255, 255, 255, 0.85), transparent);
+      transform: skewX(-20deg);
+      animation: sweepShine 3s infinite ease-in-out;
+    }
+
+    @keyframes sweepShine {
+      0%, 40% { left: -130%; }
+      75%, 100% { left: 160%; }
+    }
+
+    @keyframes buttonFloat {
+      0%, 100% { transform: translateY(0); box-shadow: 0 5px 0 #0b4ec2, 0 12px 24px rgba(0,0,0,0.25); }
+      50% { transform: translateY(-2px); box-shadow: 0 7px 0 #0b4ec2, 0 16px 28px rgba(0,0,0,0.3); }
+    }
+
+    .animated-next-btn:active {
+      transform: translateY(3px) !important;
+      box-shadow: 0 2px 0 #0b4ec2, 0 5px 10px rgba(0,0,0,0.2) !important;
+    }
+
+    .btn-arrow-svg {
+      width: 20px;
+      height: 20px;
+      fill: currentColor;
+      transition: transform 0.2s;
+    }
+    .animated-next-btn:hover .btn-arrow-svg {
+      transform: translateX(4px);
+    }
+
+    .animated-next-btn.final-state {
+      background: var(--accent-mint);
+      color: var(--accent-mint-text);
+      box-shadow: 0 5px 0 #059669, 0 14px 28px rgba(0, 0, 0, 0.3);
+    }
+  </style>
+</head>
+<body>
+
+  <main class="app-screen">
+
+    <!-- ВЕРХ: ТАЙМЛАЙН -->
+    <div class="stories-timeline" id="timeline">
+      <div class="story-track" onclick="jumpTo(0)"><div class="story-fill"></div></div>
+      <div class="story-track" onclick="jumpTo(1)"><div class="story-fill"></div></div>
+      <div class="story-track" onclick="jumpTo(2)"><div class="story-fill"></div></div>
+      <div class="story-track" onclick="jumpTo(3)"><div class="story-fill"></div></div>
+    </div>
+
+    <!-- СЛАЙДЫ -->
+    <div class="scenes-viewport" id="viewport-box">
+
+      <!-- СЛАЙД 1: Тропа (Оценка 1 вместо 11, линия не пересекает текст Урока 3) -->
+      <div class="scene-slide active" data-step="0">
+        <div class="slide-header">
+          <div class="slide-badge-sub">ЗнАйка • С нуля до уверенной речи</div>
+          <h1 class="slide-h1">Пошаговая тропа уроков</h1>
+        </div>
+
+        <div class="compact-trail-container">
+          <!-- Аккуратные дуги, заканчивающиеся строго у границы ноды 3 и не заходящие на надпись -->
+          <svg class="trail-svg-line" viewBox="0 0 340 180" fill="none">
+            <!-- Линия от ноды 1 к ноде 2 -->
+            <path d="M 102 62 Q 130 92 153 102" stroke="rgba(255,255,255,0.45)" stroke-width="3" stroke-dasharray="6 6"/>
+            <!-- Линия от ноды 2 к ноде 3 (останавливается у кромки ноды 3, выше подписи) -->
+            <path d="M 194 102 Q 224 82 248 64" stroke="rgba(255,255,255,0.45)" stroke-width="3" stroke-dasharray="6 6"/>
+          </svg>
+
+          <!-- 1. Сданная лекция (Балл 1) -->
+          <div class="trail-node-item node-1">
+            <div class="node-circle mint">
+              <span class="score">1</span>
+              <span class="sub">ЛЕКЦИЯ</span>
+            </div>
+            <span class="node-label">Урок 1: Лекция</span>
+          </div>
+
+          <!-- 2. Активная практика -->
+          <div class="trail-node-item node-2">
+            <div class="node-circle play">
+              <svg style="width:24px;height:24px;fill:#0f172a;margin-left:2px;" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            </div>
+            <span class="node-label">Урок 2: Практика</span>
+          </div>
+
+          <!-- 3. Будущий урок (линии не заезжают) -->
+          <div class="trail-node-item node-3">
+            <div class="node-circle lock">
+              <span style="font-size:13px;font-weight:800;margin-bottom:2px;">3</span>
+              <svg style="width:11px;height:11px;fill:currentColor;" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+            </div>
+            <span class="node-label">Урок 3: Лекция</span>
+          </div>
+        </div>
+
+        <p class="slide-subtext">
+          Никаких скучных учебников. Двигайся по тропе шаг за шагом: 5 минут в день, короткие задания и быстрый результат.
+        </p>
+      </div>
+
+      <!-- СЛАЙД 2: Языки с интерактивным нажатием (наклон влево, галочка, курсив) -->
+      <div class="scene-slide" data-step="1">
+        <div class="slide-header">
+          <div class="slide-badge-sub">Выбор направления</div>
+          <h1 class="slide-h1">Английский & Татарский</h1>
+        </div>
+
+        <div class="languages-interactive-grid">
+          <!-- Английский (по умолчанию выбран) -->
+          <div class="interactive-lang-card selected" id="card-en" onclick="selectLangCard('en')">
+            <div class="check-corner-badge">✓</div>
+            <img src="https://storage.yandexcloud.net/b.fotovssylku.ru/2026/10/03/ANGL9d2071e6d51d5e89.png" alt="English">
+            <h3 class="card-title">English</h3>
+            <span class="card-badge badge-en">A0 — C1</span>
+            <div class="card-desc">От алфавита до беглой речи</div>
+          </div>
+
+          <!-- Татарский -->
+          <div class="interactive-lang-card" id="card-tt" onclick="selectLangCard('tt')">
+            <div class="check-corner-badge">✓</div>
+            <img src="https://storage.yandexcloud.net/b.fotovssylku.ru/2026/10/03/TATARSK859a66530b0772da.png" alt="Татар">
+            <h3 class="card-title">Татар теле</h3>
+            <span class="card-badge badge-tt">Живой курс</span>
+            <div class="card-desc">Разговорные диалоги</div>
+          </div>
+        </div>
+
+        <p class="slide-subtext">
+          Нажми на карточку, чтобы примерить язык. Можно учить параллельно оба направления!
+        </p>
+      </div>
+
+      <!-- СЛАЙД 3: Русская транскрипция с теми же флагами -->
+      <div class="scene-slide" data-step="2">
+        <div class="slide-header">
+          <div class="slide-badge-sub">Произношение с первого дня</div>
+          <h1 class="slide-h1">Русская транскрипция</h1>
+        </div>
+
+        <div class="phonetic-card">
+          <!-- Английское слово с флагом Англии -->
+          <div class="phonetic-row">
+            <div>
+              <div class="word-main">Apple <span class="transcription-pill">[эпл]</span></div>
+              <div class="trans-ru">Яблоко</div>
+            </div>
+            <img class="flag-icon-img" src="https://storage.yandexcloud.net/b.fotovssylku.ru/2026/10/03/ANGL9d2071e6d51d5e89.png" alt="Флаг Англии">
+          </div>
+
+          <!-- Татарское слово с флагом Татарстана -->
+          <div class="phonetic-row">
+            <div>
+              <div class="word-main">Исәнмесез <span class="transcription-pill">[исәнмесе́з]</span></div>
+              <div class="trans-ru">Здравствуйте</div>
+            </div>
+            <img class="flag-icon-img" src="https://storage.yandexcloud.net/b.fotovssylku.ru/2026/10/03/TATARSK859a66530b0772da.png" alt="Флаг Татарстана">
+          </div>
+        </div>
+
+        <p class="slide-subtext">
+          Каждое слово сразу сопровождается понятным русским звучанием, чтобы ты говорил уверенно и чисто.
+        </p>
+      </div>
+
+      <!-- СЛАЙД 4: Старт со средним баллом 5,0 -->
+      <div class="scene-slide" data-step="3">
+        <div class="slide-header">
+          <div class="slide-badge-sub">Твой персональный трек</div>
+          <h1 class="slide-h1">Всё готово к уроку!</h1>
+        </div>
+
+        <div class="stats-compact-grid">
+          <div class="stat-card-white">
+            <div class="stat-head-txt">
+              <span>Средний балл</span>
+              <span class="info-i">i</span>
+            </div>
+            <div>
+              <div class="stat-big-num">5,0</div>
+              <div class="stat-foot-txt">Высшая планка</div>
+            </div>
+          </div>
+
+          <div class="stat-card-white">
+            <div class="stat-head-txt">
+              <span>Старт пути</span>
+            </div>
+            <div>
+              <div class="stat-big-num">1/10</div>
+              <div class="stat-foot-txt">Уровень A0 готов</div>
+            </div>
+          </div>
+        </div>
+
+        <p class="slide-subtext">
+          Умный разбор ошибок, система оценок от 2 до 5 и контрольные каждые 5 уроков.
+        </p>
+      </div>
+
+    </div>
+
+    <!-- КНОПКА "ДАЛЕЕ" -->
+    <div class="bottom-flow-box">
+      <button class="animated-next-btn" id="next-action-btn" onclick="handleNextClick()">
+        <span id="btn-label-text">Далее</span>
+        <svg class="btn-arrow-svg" viewBox="0 0 24 24"><path d="M5 13h11.86l-5.43 5.43 1.42 1.42L21.14 12l-8.29-8.29-1.42 1.42 5.43 5.43H5v2z"/></svg>
+      </button>
+    </div>
+
+  </main>
+
+  <script>
+    /* ========================================================
+       ЗВУКОВОЙ ДВИЖОК
+       ======================================================== */
+    let audioCtx = null;
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function playTone(freq, duration = 0.1, gainVal = 0.12) {
+      try {
+        initAudio();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(gainVal, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {}
+    }
+
+    function soundTap() {
+      playTone(560, 0.08, 0.12);
+      setTimeout(() => playTone(840, 0.12, 0.1), 50);
+    }
+
+    function soundCardSelect() {
+      playTone(660, 0.08, 0.15);
+      setTimeout(() => playTone(990, 0.15, 0.12), 60);
+    }
+
+    function soundFinish() {
+      playTone(523.25, 0.12, 0.15);
+      setTimeout(() => playTone(659.25, 0.14, 0.15), 90);
+      setTimeout(() => playTone(783.99, 0.16, 0.15), 180);
+      setTimeout(() => playTone(1046.50, 0.28, 0.2), 270);
+    }
+
+    /* ========================================================
+       ИНТЕРАКТИВ КАРТОЧЕК ЯЗЫКОВ
+       ======================================================== */
+    function selectLangCard(lang) {
+      soundCardSelect();
+      const cardEn = document.getElementById('card-en');
+      const cardTt = document.getElementById('card-tt');
+
+      if (lang === 'en') {
+        cardEn.classList.add('selected');
+        cardTt.classList.remove('selected');
+      } else {
+        cardTt.classList.add('selected');
+        cardEn.classList.remove('selected');
+      }
+    }
+
+    /* ========================================================
+       ВИДЕО-ТАЙМЛАЙН И СМЕНА СЛАЙДОВ
+       ======================================================== */
+    const totalSteps = 4;
+    let currentStep = 0;
+    const STEP_DURATION = 4200;
+    let timer = null;
+    let startTime = null;
+    let isPaused = false;
+
+    const slides = document.querySelectorAll('.scene-slide');
+    const fills = document.querySelectorAll('.story-fill');
+    const nextBtn = document.getElementById('next-action-btn');
+    const btnLabel = document.getElementById('btn-label-text');
+
+    function startTimer() {
+      clearInterval(timer);
+      startTime = Date.now();
+
+      timer = setInterval(() => {
+        if (isPaused) return;
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min((elapsed / STEP_DURATION) * 100, 100);
+
+        if (fills[currentStep]) {
+          fills[currentStep].style.width = progress + '%';
+        }
+
+        if (progress >= 100) {
+          clearInterval(timer);
+          if (currentStep < totalSteps - 1) {
+            goToStep(currentStep + 1);
+          }
+        }
+      }, 30);
+    }
+
+    function goToStep(step) {
+      if (step < 0 || step >= totalSteps) return;
+      currentStep = step;
+
+      slides.forEach((sl, idx) => {
+        sl.classList.toggle('active', idx === currentStep);
+      });
+
+      fills.forEach((fill, idx) => {
+        if (idx < currentStep) fill.style.width = '100%';
+        else if (idx > currentStep) fill.style.width = '0%';
+        else fill.style.width = '0%';
+      });
+
+      if (currentStep === totalSteps - 1) {
+        btnLabel.innerText = "Начать обучение! 🚀";
+        nextBtn.classList.add('final-state');
+        soundFinish();
+      } else {
+        btnLabel.innerText = "Далее";
+        nextBtn.classList.remove('final-state');
+        soundTap();
+      }
+
+      startTimer();
+    }
+
+    function handleNextClick() {
+      initAudio();
+      if (currentStep < totalSteps - 1) {
+        goToStep(currentStep + 1);
+      } else {
+        soundFinish();
+        alert("🎉 Курс настроен! Переходим к первому уроку.");
+        goToStep(0);
+      }
+    }
+
+    function jumpTo(idx) {
+      initAudio();
+      goToStep(idx);
+    }
+
+    // Пауза при удержании экрана пальцем
+    const vp = document.getElementById('viewport-box');
+    vp.addEventListener('touchstart', () => isPaused = true, { passive: true });
+    vp.addEventListener('touchend', () => isPaused = false, { passive: true });
+    vp.addEventListener('mousedown', () => isPaused = true);
+    vp.addEventListener('mouseup', () => isPaused = false);
+
+    startTimer();
+  </script>
+</body>
+</html>
